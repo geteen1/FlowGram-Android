@@ -26,6 +26,9 @@ public class FlowSettingsActivity extends UniversalFragment {
     private static final int ID_GHOST_STORIES = 14;
     private static final int ID_SAVE_DELETED = 40;
     private static final int ID_SHOW_SECONDS = 70;
+    private static final int ID_CRASH_SHARE = 90;
+    private static final int ID_CRASH_CLEAR = 91;
+    private static final int ID_LEAVE_SAFE = 92;
     private static final int ID_DOUBLE_TAP = 80;
     private static final int ID_SILENT = 81;
     private static final int ID_SHAKE = 82;
@@ -135,6 +138,19 @@ public class FlowSettingsActivity extends UniversalFragment {
         items.add(UItem.asCheck(ID_HIDE_PREMIUM, "Скрыть Premium и Stars в настройках").setChecked(FlowConfig.hidePremium));
         items.add(UItem.asShadow("Реклама не загружается в каналах, ботах, поиске и видео. Истории убираются из списка чатов. ID копируется нажатием на строку в профиле. До 8 аккаунтов: Настройки → Добавить аккаунт."));
 
+        items.add(UItem.asHeader("Надёжность"));
+        if (org.telegram.messenger.FlowCrash.isSafeMode()) {
+            items.add(UItem.asButton(ID_LEAVE_SAFE, R.drawable.msg_retry, "Выйти из безопасного режима").accent());
+        }
+        final int crashes = org.telegram.messenger.FlowCrash.crashCount();
+        items.add(UItem.asButton(ID_CRASH_SHARE, R.drawable.msg_share, crashes > 0 ? "Отправить отчёт о сбоях (" + crashes + ")" : "Сбоев не было 👍"));
+        if (crashes > 0) {
+            items.add(UItem.asButton(ID_CRASH_CLEAR, R.drawable.msg_delete, "Очистить отчёт").red());
+        }
+        items.add(UItem.asShadow(org.telegram.messenger.FlowCrash.isSafeMode()
+                ? "FlowGram несколько раз подряд закрылся при запуске, поэтому часть функций мода временно выключена. Отправьте отчёт в чат FlowGram и выйдите из безопасного режима."
+                : "Если FlowGram вылетит, отчёт сохранится здесь — отправьте его в чат FlowGram, это помогает быстро исправлять ошибки. После 3 сбоев подряд при запуске включится безопасный режим."));
+
         items.add(UItem.asHeader("Сообщество"));
         items.add(UItem.asButton(ID_CHANNEL, R.drawable.msg_channel, "Канал FlowGram").accent());
         items.add(UItem.asButton(ID_CHAT, R.drawable.msg_groups, "Чат пользователей"));
@@ -213,6 +229,17 @@ public class FlowSettingsActivity extends UniversalFragment {
                 break;
             case ID_REG_DATE:
                 FlowConfig.toggleShowRegDate();
+                break;
+            case ID_CRASH_SHARE:
+                if (org.telegram.messenger.FlowCrash.crashCount() > 0) {
+                    org.telegram.messenger.FlowCrash.shareLog(getParentActivity());
+                }
+                return;
+            case ID_CRASH_CLEAR:
+                org.telegram.messenger.FlowCrash.clearLog();
+                break;
+            case ID_LEAVE_SAFE:
+                FlowConfig.leaveSafeMode();
                 break;
             case ID_SAVE_DELETED:
                 FlowConfig.toggleSaveDeleted();

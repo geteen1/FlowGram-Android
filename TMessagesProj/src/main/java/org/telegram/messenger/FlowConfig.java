@@ -76,6 +76,7 @@ public class FlowConfig {
         if (loaded || ApplicationLoader.applicationContext == null) {
             return;
         }
+        try { // FlowGram: a corrupted prefs file must never crash the app, defaults are used instead
         SharedPreferences p = prefs();
         hideSponsored = p.getBoolean("hideSponsored", hideSponsored);
         showIdInProfile = p.getBoolean("showIdInProfile", showIdInProfile);
@@ -109,6 +110,12 @@ public class FlowConfig {
         ghostRead = p.getBoolean("ghostRead", ghostRead);
         ghostOnline = p.getBoolean("ghostOnline", ghostOnline);
         ghostStories = p.getBoolean("ghostStories", ghostStories);
+        } catch (Throwable e) {
+            FileLog.e(e);
+        }
+        if (FlowCrash.isSafeMode()) {
+            applySafeMode();
+        }
         loaded = true;
     }
 
@@ -198,6 +205,41 @@ public class FlowConfig {
     public static void toggleShowGhostButton() {
         showGhostButton = !showGhostButton;
         put("showGhostButton", showGhostButton);
+    }
+
+    // ---------- Safe mode ----------
+
+    /**
+     * After repeated crashes at startup: switch off the features that touch message rendering and update handling.
+     * Privacy features (ghost mode, chat PIN lock, hidden phone, proxy, ads) stay as they are, so nothing hidden gets exposed.
+     * In-memory only: the saved settings come back when the user leaves safe mode.
+     */
+    private static void applySafeMode() {
+        saveDeleted = false;
+        markDeleted = false;
+        showSeconds = false;
+        showIdInProfile = false;
+        showRegDate = false;
+        hideStories = false;
+        doubleTapReply = false;
+        shakeGhost = false;
+        try {
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    android.widget.Toast.makeText(ApplicationLoader.applicationContext,
+                            "FlowGram: безопасный режим после нескольких сбоев. Подробнее в меню FlowGram.", android.widget.Toast.LENGTH_LONG).show();
+                } catch (Throwable ignore) {
+                }
+            }, 3000);
+        } catch (Throwable ignore) {
+        }
+    }
+
+    /** Leave safe mode and reload the real settings. */
+    public static synchronized void leaveSafeMode() {
+        FlowCrash.leaveSafeMode();
+        loaded = false;
+        load();
     }
 
     // ---------- More toggles ----------

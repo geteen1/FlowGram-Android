@@ -298,6 +298,7 @@ public class ApplicationLoader extends Application {
         } catch (Throwable ignore) {
 
         }
+        FlowCrash.onAppStart(applicationContext); // FlowGram: crash log + safe mode, as early as possible
 
         super.onCreate();
 
