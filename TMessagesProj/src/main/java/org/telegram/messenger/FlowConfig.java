@@ -44,6 +44,9 @@ public class FlowConfig {
     // Exclusive
     public static boolean saveDeleted = true;
 
+    // Background work (keep-alive + push connection, no Firebase needed)
+    public static boolean backgroundWork = true;
+
     // Chats
     public static boolean showSeconds = false;
     public static boolean doubleTapReply = false;
@@ -86,6 +89,7 @@ public class FlowConfig {
         saveDeleted = p.getBoolean("saveDeleted", saveDeleted);
         builtinProxy = p.getBoolean("builtinProxy", builtinProxy);
         showSeconds = p.getBoolean("showSeconds", showSeconds);
+        backgroundWork = p.getBoolean("backgroundWork", backgroundWork);
         doubleTapReply = p.getBoolean("doubleTapReply", doubleTapReply);
         silentSend = p.getBoolean("silentSend", silentSend);
         shakeGhost = p.getBoolean("shakeGhost", shakeGhost);
@@ -420,6 +424,59 @@ public class FlowConfig {
         } catch (Exception e) {
             FileLog.e(e);
             return null;
+        }
+    }
+
+    /**
+     * Called at app start before the network layer exists: mirror our "background work" switch into Telegram's own
+     * keep-alive service and background push connection settings, which are read when the connection starts.
+     */
+    public static void applyBackgroundWorkOnStart() {
+        load();
+        try {
+            MessagesController.getGlobalNotificationsSettings().edit()
+                    .putBoolean("pushService", backgroundWork)
+                    .putBoolean("pushConnection", backgroundWork)
+                    .commit();
+        } catch (Throwable e) {
+            FileLog.e(e);
+        }
+    }
+
+    public static void toggleBackgroundWork() {
+        backgroundWork = !backgroundWork;
+        put("backgroundWork", backgroundWork);
+        applyBackgroundWorkOnStart();
+        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            if (UserConfig.getInstance(a).isClientActivated()) {
+                ConnectionsManager.getInstance(a).setPushConnectionEnabled(backgroundWork);
+            }
+        }
+        ApplicationLoader.startPushService();
+    }
+
+    public static boolean isIgnoringBatteryOptimizations() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) return true;
+            android.os.PowerManager pm = (android.os.PowerManager) ApplicationLoader.applicationContext.getSystemService(Context.POWER_SERVICE);
+            return pm != null && pm.isIgnoringBatteryOptimizations(ApplicationLoader.applicationContext.getPackageName());
+        } catch (Throwable e) {
+            return true;
+        }
+    }
+
+    /** Opens the system dialog "Allow FlowGram to always run in background?". */
+    public static void requestIgnoreBatteryOptimizations(android.app.Activity activity) {
+        if (activity == null || android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) return;
+        try {
+            android.content.Intent intent = new android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(android.net.Uri.parse("package:" + activity.getPackageName()));
+            activity.startActivity(intent);
+        } catch (Throwable e) {
+            try {
+                activity.startActivity(new android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+            } catch (Throwable ignore) {
+            }
         }
     }
 

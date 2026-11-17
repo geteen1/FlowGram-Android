@@ -26,6 +26,8 @@ public class FlowSettingsActivity extends UniversalFragment {
     private static final int ID_GHOST_STORIES = 14;
     private static final int ID_SAVE_DELETED = 40;
     private static final int ID_SHOW_SECONDS = 70;
+    private static final int ID_BACKGROUND = 94;
+    private static final int ID_BATTERY = 95;
     private static final int ID_PLUGINS = 93;
     private static final int ID_CRASH_SHARE = 90;
     private static final int ID_CRASH_CLEAR = 91;
@@ -94,6 +96,13 @@ public class FlowSettingsActivity extends UniversalFragment {
             headerView = new FlowCommunity.HeaderView(getContext());
         }
         items.add(UItem.asCustomShadow(headerView, 160));
+
+        items.add(UItem.asHeader("Работа в фоне"));
+        items.add(UItem.asCheck(ID_BACKGROUND, "Получать сообщения в фоне").setChecked(FlowConfig.backgroundWork));
+        if (FlowConfig.backgroundWork && !FlowConfig.isIgnoringBatteryOptimizations()) {
+            items.add(UItem.asButton(ID_BATTERY, R.drawable.msg2_battery, "Отключить экономию батареи для FlowGram").accent());
+        }
+        items.add(UItem.asShadow("FlowGram держит соединение с Telegram, поэтому сообщения и уведомления приходят, даже когда приложение свёрнуто. В шторке будет тихий значок «FlowGram работает в фоне» — его можно скрыть в настройках уведомлений Android. Если сообщения всё равно запаздывают, отключите экономию батареи."));
 
         items.add(UItem.asHeader("Обход блокировок"));
         if (FlowConfig.hasBuiltinProxy()) {
@@ -254,6 +263,12 @@ public class FlowSettingsActivity extends UniversalFragment {
                 break;
             case ID_PLUGINS:
                 presentFragment(new FlowPluginsActivity());
+                return;
+            case ID_BACKGROUND:
+                FlowConfig.toggleBackgroundWork();
+                break;
+            case ID_BATTERY:
+                FlowConfig.requestIgnoreBatteryOptimizations(getParentActivity());
                 return;
             case ID_SAVE_DELETED:
                 FlowConfig.toggleSaveDeleted();

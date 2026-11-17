@@ -195,6 +195,7 @@ public class ApplicationLoader extends Application {
         applicationInited = true;
         try {
             FlowConfig.applyBuiltinProxyOnStart(); // FlowGram: bypass blocks before the network starts
+            FlowConfig.applyBackgroundWorkOnStart(); // FlowGram: messages in background without Firebase
         } catch (Throwable e) {
             FileLog.e(e);
         }
@@ -391,6 +392,9 @@ public class ApplicationLoader extends Application {
         }
         if (enabled) {
             try {
+                if (FlowConfig.backgroundWork && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    applicationContext.startForegroundService(new Intent(applicationContext, NotificationsService.class)); // FlowGram
+                } else
                 applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
             } catch (Throwable ignore) {
 
