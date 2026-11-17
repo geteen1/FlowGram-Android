@@ -3448,8 +3448,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 // a new drawable (also when the view is recreated after a theme switch made elsewhere): remember its tint, the
                 // theme hook only recolors when the color differs from the last one applied
                 logoDrawable.setColorFilter(lastLogoDrawableColor = getThemedColor(Theme.key_telegram_color_dialogsLogo), PorterDuff.Mode.MULTIPLY);
-                // FlowGram: plain "FlowGram" title instead of the Telegram wordmark image
-                SpannableStringBuilder ssb = new SpannableStringBuilder(getString(R.string.AppName));
+                // FlowGram: plain title instead of the Telegram wordmark image; hardcoded because
+                // server language packs override the AppName string with "Telegram"
+                SpannableStringBuilder ssb = new SpannableStringBuilder("FlowGram");
                 actionBar.setTitle(ssb, statusDrawable);
                 updateStatus(UserConfig.getInstance(currentAccount).getCurrentUser(), false);
             }

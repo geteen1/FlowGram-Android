@@ -26,6 +26,7 @@ public class FlowSettingsActivity extends UniversalFragment {
     private static final int ID_GHOST_STORIES = 14;
     private static final int ID_SAVE_DELETED = 40;
     private static final int ID_SHOW_SECONDS = 70;
+    private static final int ID_PLUGINS = 93;
     private static final int ID_CRASH_SHARE = 90;
     private static final int ID_CRASH_CLEAR = 91;
     private static final int ID_LEAVE_SAFE = 92;
@@ -75,6 +76,14 @@ public class FlowSettingsActivity extends UniversalFragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (listView != null && listView.adapter != null) {
+            listView.adapter.update(false); // FlowGram: refresh plugin count etc.
+        }
+    }
+
+    @Override
     protected CharSequence getTitle() {
         return "Настройки FlowGram";
     }
@@ -107,6 +116,8 @@ public class FlowSettingsActivity extends UniversalFragment {
 
         items.add(UItem.asHeader("Эксклюзив FlowGram"));
         items.add(UItem.asButton(ID_SHORTS, R.drawable.msg_video, "FlowShorts — видео из каналов").accent());
+        final int activePlugins = org.telegram.messenger.FlowPlugins.enabledCount();
+        items.add(UItem.asButton(ID_PLUGINS, R.drawable.msg_fave, activePlugins > 0 ? "🧩 Плагины (включено: " + activePlugins + ")" : "🧩 Плагины").accent());
         items.add(UItem.asCheck(ID_SAVE_DELETED, "Сохранять удалённые сообщения").setChecked(FlowConfig.saveDeleted));
         items.add(UItem.asCheck(ID_MARK_DELETED, "Помечать удалённые 🗑").setChecked(FlowConfig.markDeleted));
         items.add(UItem.asShadow("Если собеседник удалит сообщение, у вас оно останется. Работает для сообщений, полученных, пока функция включена. Ваши собственные удаления работают как обычно."));
@@ -241,6 +252,9 @@ public class FlowSettingsActivity extends UniversalFragment {
             case ID_LEAVE_SAFE:
                 FlowConfig.leaveSafeMode();
                 break;
+            case ID_PLUGINS:
+                presentFragment(new FlowPluginsActivity());
+                return;
             case ID_SAVE_DELETED:
                 FlowConfig.toggleSaveDeleted();
                 break;

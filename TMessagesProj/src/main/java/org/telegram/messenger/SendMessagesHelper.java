@@ -4439,6 +4439,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void sendMessage(SendMessageParams sendMessageParams) {
+        if (sendMessageParams.message != null) { // FlowGram: plugins (commands, replacements, signature)
+            sendMessageParams.message = FlowPlugins.processOutgoing(currentAccount, sendMessageParams.peer, sendMessageParams.message, sendMessageParams.entities);
+        }
         if (FlowConfig.silentSend) {
             sendMessageParams.notify = false; // FlowGram: send without sound by default
         }
